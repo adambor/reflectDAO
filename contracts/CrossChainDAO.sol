@@ -1,4 +1,4 @@
-import "./btcrelay-sol/BTCRelay_commit_pruned_tsfix.sol";
+import "./BtcRelay.sol";
 
 contract CrossChainDAO {
 
@@ -13,15 +13,13 @@ contract CrossChainDAO {
         bytes32 utxoHash; //if <0xFFFF then is treated as vout of the current commitment transaction else hash of reversedTxId + vout
         uint256 balance; //Balance of tokens held at the UTXO
         uint256 timelock; //Timelock of the UTXO, 0 if no timelock
-        bytes32 publicKeyX; //x point of the public key
-        bytes32 publicKeyY; //y point of the public key
+        address publicKey; //address of the voter
     }
 
     struct UtxoState {
         uint256 balance; //Balance of tokens held at the UTXO
         uint256 timelock; //Timelock of the UTXO, 0 if no timelock
-        bytes32 publicKeyX; //x point of the public key
-        bytes32 publicKeyY; //y point of the public key
+        address publicKey; //address of the voter
     }
 
     struct GenesisUtxoState {
@@ -29,11 +27,26 @@ contract CrossChainDAO {
         
         uint256 balance; //Balance of tokens held at the UTXO
         uint256 timelock; //Timelock of the UTXO, 0 if no timelock
-        bytes32 publicKeyX; //x point of the public key
-        bytes32 publicKeyY; //y point of the public key
+        address publicKey; //address of the voter
 
         uint256 position;
         bytes merkleProof;
+    }
+
+    ////////////////////////////////////
+    ///// Unsafe, just for testing /////
+    ////////////////////////////////////
+    function saveCommitment(
+        bytes32 utxoHash,
+        UtxoState memory utxoState
+    ) public {
+        bytes32 saveData = bytes32(
+            (utxoState.balance & 0xFFFFFFFFFFFFFFFF)<<192 |
+            (utxoState.timelock & 0xFFFFFFFF)<<160 | 
+            uint256(uint160(utxoState.publicKey))
+        );
+        _data[utxoHash] = saveData;
+        emit UtxoCreated(utxoHash, saveData);
     }
 
     bytes32 public _genesisMerkleRoot;
@@ -44,12 +57,23 @@ contract CrossChainDAO {
     event UtxoSpent(bytes32 indexed utxoHash, bytes32 data);
     event UtxoCreated(bytes32 indexed utxoHash, bytes32 data);
 
+    uint256 constant TOTAL_TOKENS = 1000000000;
+    uint256 constant MAX_MULTIPLIER = 5;
+
     //BTCRelay immutable _btcRelay;
 
     // constructor(bytes32 genesisMerkleRoot) {
     //     _genesisMerkleRoot = genesisMerkleRoot;
     //     //_btcRelay = btcRelay;
     // }
+
+    function getTokens(bytes32[] calldata utxoHashes) view public returns (uint256) {
+        uint256 totalTokens;
+        for(uint256 i=0;i<utxoHashes.length;i++) {
+            totalTokens += uint256(_data[utxoHashes[i]])>>192;
+        }
+        return totalTokens;
+    }
 
     function transactGenesis(
         bytes memory transactionData,
@@ -94,11 +118,11 @@ contract CrossChainDAO {
     function getGenesisHash(bytes32 utxoHash, GenesisUtxoState calldata utxoState) public view returns (bytes32 result) {
         assembly {
             let freeMemory := mload(0x40)
-            mstore(0x40, add(freeMemory, 128))
+            mstore(0x40, add(freeMemory, 96))
             mstore(0x00, utxoHash)
-            calldatacopy(freeMemory, add(utxoState, 32), 128)
+            calldatacopy(freeMemory, add(utxoState, 32), 96)
 
-            pop(staticcall(gas(), 0x02, freeMemory, 128, 0x20, 32))
+            pop(staticcall(gas(), 0x02, freeMemory, 96, 0x20, 32))
             pop(staticcall(gas(), 0x02, 0x00, 64, 0x00, 32))
 
             result := mload(0x00)
@@ -137,19 +161,6 @@ contract CrossChainDAO {
 
             value := mload(0x00)
         }
-    }
-
-    function saveCommitment(
-        bytes32 utxoHash,
-        UtxoState memory utxoState
-    ) public {
-        bytes32 saveData = bytes32(
-            (utxoState.balance & 0xFFFFFFFFFFFFFFFF)<<192 |
-            (utxoState.timelock & 0xFFFFFFFF)<<160 | 
-            uint256(uint160(getEthAddress(utxoState.publicKeyX, utxoState.publicKeyY)))
-        );
-        _data[utxoHash] = saveData;
-        emit UtxoCreated(utxoHash, saveData);
     }
 
     function transact(
@@ -235,8 +246,7 @@ contract CrossChainDAO {
                 }
             } else {
                 require(outputStateTransitions.timelock==0, "Cannot specify timelock");
-                require(outputStateTransitions.publicKeyX==0, "Cannot specify public key");
-                require(outputStateTransitions.publicKeyY==0, "Cannot specify public key");
+                require(outputStateTransitions.publicKey==address(0), "Cannot specify public key");
 
                 //Check the current state of the UTXO
                 outputStateTransitions.balance += uint256(_data[utxoHash])>>192;
@@ -245,7 +255,7 @@ contract CrossChainDAO {
             bytes32 saveData = bytes32(
                 (outputStateTransitions.balance & 0xFFFFFFFFFFFFFFFF)<<192 |
                 (outputStateTransitions.timelock & 0xFFFFFFFF)<<160 | 
-                uint256(uint160(getEthAddress(outputStateTransitions.publicKeyX, outputStateTransitions.publicKeyY)))
+                uint256(uint160(outputStateTransitions.publicKey))
             );
             emit UtxoCreated(utxoHash, saveData);
             _data[utxoHash] = saveData;
@@ -253,12 +263,18 @@ contract CrossChainDAO {
 
     }
 
-    function getEthAddress(bytes32 xVotingKey, bytes32 yVotingKey) public pure returns (address result) {
-        assembly {
-            mstore(0x00, xVotingKey)
-            mstore(0x20, yVotingKey)
-            result := keccak256(0x00, 0x40)
-        }
+    //Same as getVotingPower, but doesn't throw when not timelocked for enough
+    function getVotingPowerNoRevert(address voter, bytes32 utxoHash, uint256 minExpiry) public view returns (uint256 votingPower) {
+        //Check if commited
+        uint256 data = uint256(_data[utxoHash]);
+        uint256 timelock = (data >> 160) & 0xFFFFFFFF;
+        uint256 balance = data >> 192;
+        if(timelock<minExpiry) return 0;
+        if(voter!=address(uint160(data))) return 0;
+
+        votingPower = 1+((timelock - block.timestamp) / 360 days);
+        if(votingPower>MAX_MULTIPLIER) votingPower = MAX_MULTIPLIER;
+        votingPower *= balance;
     }
 
     function getVotingPower(address voter, bytes32 utxoHash, uint256 minExpiry) public view returns (uint256 votingPower) {
@@ -270,8 +286,12 @@ contract CrossChainDAO {
         require(voter==address(uint160(data)), "Invalid voter address");
 
         votingPower = 1+((timelock - block.timestamp) / 360 days);
-        if(votingPower>5) votingPower = 5;
+        if(votingPower>MAX_MULTIPLIER) votingPower = MAX_MULTIPLIER;
         votingPower *= balance;
+    }
+
+    function getTotalVotingPower() public view returns (uint256 votingPower) {
+        votingPower = TOTAL_TOKENS * MAX_MULTIPLIER; 
     }
 
     function getStateTransitionCommitHash(UtxoStateTransitionOutput[] memory newStates) public view returns (bytes32 result) {
@@ -289,7 +309,7 @@ contract CrossChainDAO {
                 { index := add(index, 32) }
             {
                 let startPosition := mload(index)
-                pop(staticcall(gas(), 0x02, startPosition, 160, dst, 32))
+                pop(staticcall(gas(), 0x02, startPosition, 128, dst, 32))
                 dst := add(dst, 32)
             }
             
