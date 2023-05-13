@@ -27,6 +27,8 @@ export default class HomeView extends Vue {}
     .home-content {
       padding: 1rem;
       box-sizing:border-box;
+      max-width:1000px;
+      margin:0 auto;
 
       h1 {
         color:#fff;

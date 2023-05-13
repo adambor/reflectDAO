@@ -12,6 +12,9 @@
         <router-link to="/">
           <DashboardIcon/>
         </router-link>
+        <router-link to="/add">
+          <PlusIcon/>
+        </router-link>
       </nav>
     </div>
     <div class="body-container">
@@ -21,11 +24,6 @@
 </template>
 
 <style lang="scss">
-* {
-  padding:0;
-  margin:0;
-}
-
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -81,6 +79,14 @@
         border-radius:100%;
         margin:0;
 
+        &:not(:last-of-type) {
+          margin-bottom:10px;
+        }
+
+        svg {
+          max-width:30px;
+        }
+
         &.router-link-exact-active {
           color: #C0E0F9;
         }
@@ -91,6 +97,7 @@
 
   .body-container {
     flex-grow: 1;
+    overflow-y:scroll;
   }
 
 }
@@ -99,10 +106,12 @@
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
 import DashboardIcon from "@/components/icons/DashboardIcon.vue";
+import PlusIcon from "@/components/icons/PlusIcon.vue";
 
 @Options({
   components: {
-    DashboardIcon
+    DashboardIcon,
+    PlusIcon
   },
 })
 export default class App extends Vue {}

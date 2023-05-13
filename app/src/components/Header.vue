@@ -1,7 +1,9 @@
 <template>
   <div class="header">
     <div class="header-wrapper">
-      <p>reflect<span>DAO</span></p>
+      <router-link to="/">
+        reflect<span>DAO</span>
+      </router-link>
 
       <Search />
 
@@ -33,13 +35,12 @@ export default class Header extends Vue {
   .header {
     border-bottom: 1px solid rgba(255,255,255,.05);
 
-    p {
+    a {
       font-weight:bold;
       color:#FFCE4D;
-      font-size:1.2rem;
+      font-size:1.1rem;
       letter-spacing: -.5px;
-      font-weight: bold;
-      
+      text-decoration:none;
     }
 
     .header-wrapper {

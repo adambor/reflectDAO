@@ -1,16 +1,16 @@
 <template>
   <div class="proposal-list">
-    <Proposal />
+    <ProposalCard />
   </div>
 </template>
 
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
-import Proposal from "@/components/Proposal.vue";
+import ProposalCard from "@/components/ProposalCard.vue";
 
 @Options({
   components: {
-    Proposal
+    ProposalCard
   },
   data: function () {
     return {
@@ -26,5 +26,9 @@ export default class ProposalList extends Vue {
 </script>
 
 <style scoped lang="scss">
-  
+  .proposal-list {
+    display:flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
 </style>

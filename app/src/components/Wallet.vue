@@ -4,7 +4,7 @@
     </template>
 
     <template v-else>
-      <button>Connect wallet</button>
+      <button @click="connectWallet()">Connect wallet</button>
     </template>
 </template>
 
@@ -15,6 +15,11 @@ import { Options, Vue } from "vue-class-component";
   props: {
     connected: false
   },
+  methods: {
+    connectWallet: function () {
+      console.log("...");
+    }
+  }
 })
 export default class Wallet extends Vue {
 }
@@ -29,6 +34,12 @@ export default class Wallet extends Vue {
     border-radius:10px;
     box-sizing: border-box;
     color:rgba(255,255,255,.8);
+    cursor:pointer;
+    
+    &:hover {
+      background-color:rgba(255,255,255,.02);
+    }
+
   }
 
   select {
