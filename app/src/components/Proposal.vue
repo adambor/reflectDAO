@@ -24,7 +24,15 @@
         </div>
       </div>
       <div class="voting-section">
-        <Poll />
+        <Poll
+          :voteYes="proposal.voteYes"
+          :voteNo="proposal.voteNo"
+          :percentYes="proposal.percentYes"
+          :percentNo="proposal.percentNo"
+          :totalVotes="proposal.totalVotes"
+          :alreadyVoted="proposal.alreadyVoted"
+          :quorumPercent="proposal.quorumPercent"
+        />
       </div>
     </div>
 </template>
@@ -44,9 +52,6 @@ import Poll from "@/components/Poll.vue";
   },
   data: function () {
     return {
-      proposal_title: "[ARFC] Add rETH to Aave V3 Arbitrum Liquidity Pool",
-      profile_name: "reflectdao.eth",
-      proposal_description: "LUSD is decentralised stable coin backed by ETH that is minted on the non-custodial, immutable, and governance-free, Liquidity Protocol."
     }
   },
   props: {

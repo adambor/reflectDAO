@@ -1,6 +1,9 @@
 <template>
-    <template v-if="connected">
-      ...
+    <template v-if="this.$store.state.connected">
+      <div>
+        <p class="welcome-text">Your balance</p>
+        <p class="tokens">Locked: {{ this.$store.state.balance.lockedTokens }} | Unlocked: {{ this.$store.state.balance.unlockedTokens }} | Total: {{ this.$store.state.balance.totalTokens }}</p>
+      </div>
     </template>
 
     <template v-else>
@@ -13,11 +16,14 @@ import { Options, Vue } from "vue-class-component";
 
 @Options({
   props: {
-    connected: false
   },
   methods: {
-    connectWallet: function () {
-      console.log("...");
+    connectWallet: async function () {
+      this.$store.dispatch("connectWallet");
+      setTimeout( () => {
+        this.$store.dispatch("getProposals");
+        this.$store.dispatch("getTokenBalance");
+      }, 1000)
     }
   }
 })
@@ -52,6 +58,17 @@ export default class Wallet extends Vue {
     outline-style: none;
     color:#fff;
     box-sizing: border-box;
+  }
+
+  .welcome-text {
+    color:#fff;
+    font-size:.8rem;
+    font-weight: bold;
+  }
+
+  .tokens {
+    font-size:.8rem;
+    color:#fff;
   }
 
 </style>

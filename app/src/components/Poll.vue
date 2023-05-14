@@ -12,9 +12,9 @@
           <div class="option-text">
             <div class="wrapper">
               Yes
-              <span>100%</span>
+              <span v-text="percentageYes"></span>
             </div>
-            <div class="bar"></div>
+            <div class="bar" :style="{width: percentYes + '%'}"></div>
           </div>
         </label>
         <label>
@@ -25,9 +25,9 @@
           <div class="option-text">
             <div class="wrapper">
               No
-              <span>0%</span>
+              <span v-text="percentageNo"></span>
             </div>
-            <div class="bar" style="width:5%;"></div>
+            <div class="bar" :style="{width: percentNo + '%'}"></div>
           </div>
         </label>
       </div>
@@ -64,6 +64,14 @@ import { Options, Vue } from "vue-class-component";
     alreadyVoted: Boolean,
     quorumPercent: Number
   },
+  computed: {
+    percentageYes: function () {
+      return this.percentYes + "%";
+    },
+    percentageNo: function () {
+      return this.percentNo + "%";
+    }
+  }
 })
 export default class Search extends Vue {
   voteYes!: number;

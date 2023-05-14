@@ -23,11 +23,9 @@ import Wallet from "@/components/Wallet.vue";
     Search
   },
   props: {
-    msg: String,
   },
 })
 export default class Header extends Vue {
-  msg!: string;
 }
 </script>
 
@@ -46,6 +44,8 @@ export default class Header extends Vue {
     .header-wrapper {
       width:100%;
       height:70px;
+      max-width:1000px;
+      margin:0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;

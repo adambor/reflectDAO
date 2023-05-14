@@ -3,23 +3,23 @@
     <div class="header">
       <div class="pic"></div>
       <div class="profile-name">
-        <p class="title" v-text="profile_name"></p>
+        <p class="title" v-text="short_author"></p>
         <p class="subtitle">Ends in 1 day</p>
       </div>
       <div class="badge-wrapper">
-        <Badge />
+        <Badge :state="proposal.state" />
       </div>
     </div>
     <div class="body">
       <p class="proposal-title">Proposal title</p>
-      <h1 v-text="title"></h1>
+      <h1 v-text="proposal.name"></h1>
       <p class="proposal-description">Proposal description</p>
-      <p v-text="proposal"></p>
+      <p v-text="proposal.description"></p>
       <p class="proposal-by">Proposed by</p>
-      <p>reflectdao.eth</p>
+      <p v-text="proposal.author"></p>
     </div>
     <div class="call-to-action">
-        <router-link to="/proposal/1">
+        <router-link :to="this.url">
           Read more <RightArrowIcon />
         </router-link>
     </div>
@@ -30,6 +30,7 @@
 import { Options, Vue } from "vue-class-component";
 import Badge from "@/components/Badge.vue";
 import RightArrowIcon from "@/components/icons/RightArrowIcon.vue";
+import { ProposalDTO } from '@/dto/ProposalDTO';
 
 @Options({
   components: {
@@ -38,16 +39,21 @@ import RightArrowIcon from "@/components/icons/RightArrowIcon.vue";
   },
   data: function () {
     return {
-      profile_name: "ReflectDAO",
-      title: "[ARFC] Add rETH to Aave V3 Arbitrum Liquidity Pool",
-      proposal: "rETH is listed on Aave v3 Ethereum and has over $20M of deposits. Rocket Pools is expanding its support for rETH across the L2 ecosystem, first Optimism, now Arbitrum and soon Polygon. There are currently only Chainlink Oracles for Arbitrum and Ethereum."
     }
   },
   props: {
     profile_name: String,
     title: String,
-    proposal: String
+    proposal: ProposalDTO
   },
+  computed: {
+    short_author: function () {
+      return this.proposal.author.substr(0, 6) + "..." + this.proposal.author.substr(this.proposal.author.length - 5, this.proposal.author.length);
+    },
+    url: function () {
+      return "proposal/" + this.proposal.id;
+    }
+  }
 })
 export default class ProposalCard extends Vue {
 }

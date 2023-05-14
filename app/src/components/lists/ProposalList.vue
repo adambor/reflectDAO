@@ -1,6 +1,16 @@
 <template>
   <div class="proposal-list">
-    <ProposalCard />
+    
+    <template v-if="this.$store.state.proposals">
+      <div v-for="proposal in this.$store.state.proposals" v-bind:key="proposal.id">
+        <ProposalCard :proposal="proposal" />
+      </div>
+    </template>
+
+    <template v-else>
+      <h1>Please, connect your wallet to start exploring proposals.</h1>
+    </template>
+
   </div>
 </template>
 
@@ -17,7 +27,6 @@ import ProposalCard from "@/components/ProposalCard.vue";
     }
   },
   props: {
-    msg: String,
   },
 })
 export default class ProposalList extends Vue {
@@ -30,5 +39,12 @@ export default class ProposalList extends Vue {
     display:flex;
     flex-wrap: wrap;
     justify-content: space-between;
+
+    > h1 {
+      color:rgba(255,255,255,.4);
+      text-align:left;
+      font-size:3rem;
+    }
+
   }
 </style>

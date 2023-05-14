@@ -2,7 +2,14 @@
   <div class="home">
     <Header />
     <div class="home-content">
-      <h1>Proposals</h1>
+      <div class="main-title">
+        <h1>Proposals</h1>
+        <template v-if="this.$store.state.connected && this.$store.state.balance.totalTokens != this.$store.state.balance.lockedTokens">
+          <router-link to="/lock">
+            <button>Lock your tokens</button>
+          </router-link>
+        </template>
+      </div>
       <ProposalList />
     </div>
   </div>
@@ -30,10 +37,29 @@ export default class HomeView extends Vue {}
       max-width:1000px;
       margin:0 auto;
 
-      h1 {
-        color:#fff;
-        text-align: left;
+      .main-title {
+        display:flex;
+        justify-content: space-between;
+        align-items: center;
+        width:100%;
         margin-bottom:1rem;
+        color:#fff;
+
+        button {
+          padding: .5rem 1rem;
+          background-color:transparent;
+          border:0;
+          border:2px solid rgba(255,255,255,.1);
+          border-radius:10px;
+          box-sizing: border-box;
+          color:rgba(255,255,255,.8);
+          cursor:pointer;
+          
+          &:hover {
+            background-color:rgba(255,255,255,.02);
+          }
+        }
+
       }
 
     }
