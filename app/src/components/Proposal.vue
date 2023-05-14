@@ -25,6 +25,7 @@
       </div>
       <div class="voting-section">
         <Poll
+          :proposal="proposal"
           :voteYes="proposal.voteYes"
           :voteNo="proposal.voteNo"
           :percentYes="proposal.percentYes"

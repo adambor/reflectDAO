@@ -5,7 +5,7 @@
     </div>
     <div class="options">
         <label>
-          <input name="proposal" type="radio">
+          <input name="proposal" type="radio" v-model="optionYes">
           <span class="custom-radio">
             <div class="dot"></div>
           </span>
@@ -18,7 +18,7 @@
           </div>
         </label>
         <label>
-          <input name="proposal" type="radio">
+          <input name="proposal" type="radio" v-model="optionNo">
           <span class="custom-radio">
             <div class="dot"></div>
           </span>
@@ -37,7 +37,7 @@
         </template>
 
         <template v-else>
-          <button>Vote proposal</button>
+          <button @click="vote()">Vote proposal</button>
         </template>
       </div>
   </div>
@@ -45,17 +45,18 @@
 
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
+import { StaticEVMWallet } from "@/StaticEVMWallet";
+import { ProposalDTO } from "@/dto/ProposalDTO";
 
 @Options({
   data: function () {
     return {
-      options: {
-        yes: 'Yes',
-        no: 'No'
-      }
+      optionYes: false,
+      optionNo: false
     }
   },
   props: {
+    proposal: ProposalDTO,
     voteYes: Number,
     voteNo: Number,
     percentYes: Number,
@@ -63,6 +64,15 @@ import { Options, Vue } from "vue-class-component";
     totalVotes: Number,
     alreadyVoted: Boolean,
     quorumPercent: Number
+  },
+  methods: {
+    vote: async function () {
+      if (this.optionYes || this.optionNo) {
+        console.log( await StaticEVMWallet.wallet.voteForProposal(this.proposal.id, this.optionYes ? 1 : 0) );
+      } else {
+        console.log("Nope");
+      }
+    }
   },
   computed: {
     percentageYes: function () {

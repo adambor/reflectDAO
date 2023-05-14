@@ -1,12 +1,11 @@
 import { createStore } from "vuex";
 import { EVMWallet, TokenManager, TokenStateTransitionState } from "reflectdao-lib";
 import { ProposalDTO } from "@/dto/ProposalDTO";
+import { StaticEVMWallet } from "@/StaticEVMWallet";
 
 export default createStore({
   state: function () {
     return {
-      wallet: null,
-      tokenManager: null,
       proposals: null,
       chainId: 0,
       connected: false,
@@ -18,14 +17,15 @@ export default createStore({
     connectWallet: async function (state: any) {
       return new Promise(async (resolve) => {
         let connection = await EVMWallet.connect(59140);
-        state.wallet = connection;
-        state.tokenManager = new TokenManager(connection);
-        await state.tokenManager.verifyStateTransitions();
+        StaticEVMWallet.wallet = connection;
+        
+        StaticEVMWallet.tokenManager = new TokenManager(connection);
+        await StaticEVMWallet.tokenManager.verifyStateTransitions();
 
         for(let stateTransition of TokenManager.stateTransitions) {
           console.log(stateTransition);
-          if (stateTransition.state == TokenStateTransitionState.CONFIRMED && stateTransition.smartChainTxs[state.wallet.chainId] == null) {
-            await state.wallet.proveStateTransition(stateTransition);
+          if (stateTransition.state == TokenStateTransitionState.CONFIRMED && stateTransition.smartChainTxs[StaticEVMWallet.wallet.chainId] == null) {
+            await StaticEVMWallet.wallet.proveStateTransition(stateTransition);
             break;
           }
         }
@@ -35,7 +35,7 @@ export default createStore({
       });
     },
     getProposals: async function (state: any) {
-      let proposals = await state.wallet.getProposals();
+      let proposals = await StaticEVMWallet.wallet.getProposals();
       
       state.proposals = proposals.map(function (data: any) {
         return new ProposalDTO(
@@ -60,7 +60,7 @@ export default createStore({
       });
     },
     getTokenBalance: async function (state: any) {
-      let balance = await state.wallet.getTokenBalance();
+      let balance = await StaticEVMWallet.wallet.getTokenBalance();
       state.balance = balance;
     }
   },
