@@ -7,7 +7,8 @@
     </template>
 
     <template v-else>
-      <button @click="connectWallet()">Connect wallet</button>
+      <button @click="connectWalletGnosis()">Connect wallet (Gnosis)</button>
+      <button @click="connectWalletLinea()">Connect wallet (Linea)</button>
     </template>
 </template>
 
@@ -18,8 +19,14 @@ import { Options, Vue } from "vue-class-component";
   props: {
   },
   methods: {
-    connectWallet: async function () {
-      this.$store.dispatch("connectWallet").then(() => {
+    connectWalletLinea: async function () {
+      this.$store.dispatch("connectWalletLinea").then(() => {
+        this.$store.dispatch("getProposals");
+        this.$store.dispatch("getTokenBalance");
+      });
+    },
+    connectWalletGnosis: async function () {
+      this.$store.dispatch("connectWalletGnosis").then(() => {
         this.$store.dispatch("getProposals");
         this.$store.dispatch("getTokenBalance");
       });
@@ -40,6 +47,10 @@ export default class Wallet extends Vue {
     box-sizing: border-box;
     color:rgba(255,255,255,.8);
     cursor:pointer;
+
+    &:not(:last-of-type) {
+      margin-right:.5rem;
+    }
     
     &:hover {
       background-color:rgba(255,255,255,.02);

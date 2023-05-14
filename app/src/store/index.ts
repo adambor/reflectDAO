@@ -17,9 +17,6 @@ export default createStore({
     setConnected: function (state: any, status) {
       state.connected = status;
     },
-    connectWallet: async function (state: any) {
-      
-    },
     getProposals: async function (state: any) {
       let proposals = await StaticEVMWallet.wallet.getProposals();
       
@@ -51,9 +48,29 @@ export default createStore({
     }
   },
   actions: {
-    connectWallet: function (context) {
+    connectWalletLinea: function (context) {
       return new Promise(async (resolve) => {
         let connection = await EVMWallet.connect(59140);
+        StaticEVMWallet.wallet = connection;
+        
+        StaticEVMWallet.tokenManager = new TokenManager(connection);
+        await StaticEVMWallet.tokenManager.verifyStateTransitions();
+
+        for(let stateTransition of TokenManager.stateTransitions) {
+          console.log(stateTransition);
+          if (stateTransition.state == TokenStateTransitionState.CONFIRMED && stateTransition.smartChainTxs[StaticEVMWallet.wallet.chainId] == null) {
+            await StaticEVMWallet.wallet.proveStateTransition(stateTransition);
+            break;
+          }
+        }
+
+        context.commit("setConnected", true);
+        resolve(connection);
+      });
+    },
+    connectWalletGnosis: function (context) {
+      return new Promise(async (resolve) => {
+        let connection = await EVMWallet.connect(10200);
         StaticEVMWallet.wallet = connection;
         
         StaticEVMWallet.tokenManager = new TokenManager(connection);
