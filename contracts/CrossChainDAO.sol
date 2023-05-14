@@ -57,29 +57,35 @@ contract CrossChainDAO {
     event UtxoSpent(bytes32 indexed utxoHash, bytes32 data);
     event UtxoCreated(bytes32 indexed utxoHash, bytes32 data);
 
+    uint256 constant MIN_CONFIRMATIONS = 1;
     uint256 constant TOTAL_TOKENS = 1000000000;
     uint256 constant MAX_MULTIPLIER = 5;
 
-    //BTCRelay immutable _btcRelay;
+    BTCRelay immutable _btcRelay;
 
-    // constructor(bytes32 genesisMerkleRoot) {
-    //     _genesisMerkleRoot = genesisMerkleRoot;
-    //     //_btcRelay = btcRelay;
-    // }
+    constructor(bytes32 genesisMerkleRoot, BTCRelay btcRelay) {
+        _genesisMerkleRoot = genesisMerkleRoot;
+        _btcRelay = btcRelay;
+    }
 
-    function getTokens(bytes32[] calldata utxoHashes) view public returns (uint256) {
-        uint256 totalTokens;
+    function getTokens(bytes32[] calldata utxoHashes) view public returns (uint256 locked, uint256 unlocked) {
         for(uint256 i=0;i<utxoHashes.length;i++) {
-            totalTokens += uint256(_data[utxoHashes[i]])>>192;
+            uint256 data = uint256(_data[utxoHashes[i]]);
+            uint256 timelock = data >> 160 & 0xFFFFFFFF;
+            if(timelock<block.timestamp) {
+                unlocked += data>>192;
+            } else {
+                locked += data>>192;
+            }
         }
-        return totalTokens;
     }
 
     function transactGenesis(
         bytes memory transactionData,
         GenesisUtxoState[] calldata ins,
         UtxoStateTransitionOutput[] memory outs,
-        bytes calldata outPublicKeys
+        bytes calldata outPublicKeys,
+        TransactionProof calldata proof
     ) public {
 
         (
@@ -89,14 +95,30 @@ contract CrossChainDAO {
             bytes32[] memory outputScriptHashes
         ) = getTransactionData(transactionData);
 
+        _btcRelay.verifyTX(
+            reversedTxId,
+            proof.blockheight,
+            proof.txPos, 
+            proof.merkleProof, 
+            MIN_CONFIRMATIONS, 
+            proof.committedHeader
+        );
+
         require(opReturnCommitHash==getStateTransitionCommitHash(outs), "Invalid commit hash in tx");
+
+        assembly {
+            pop(opReturnCommitHash)
+        }
 
         //Check inputs
         uint256 totalInput;
         for(uint i;i<ins.length;i++) {
             {
-                bytes32 genesisHash = getGenesisHash(vinUtxoHashes[ins[i].vin], ins[i]);
-                bytes32 expectedMerkleRoot = computeMerkle_calldata(genesisHash, ins[i].position, ins[i].merkleProof);
+                bytes32 expectedMerkleRoot = computeMerkle_calldata(
+                    getGenesisHash(vinUtxoHashes[ins[i].vin], ins[i]),
+                    ins[i].position,
+                    ins[i].merkleProof
+                );
                 require(expectedMerkleRoot==_genesisMerkleRoot, "Invalid merkle!");
             }
 
@@ -167,7 +189,8 @@ contract CrossChainDAO {
         bytes memory transactionData,
         uint256[] calldata ins,
         UtxoStateTransitionOutput[] memory outs,
-        bytes calldata outPublicKeys
+        bytes calldata outPublicKeys,
+        TransactionProof calldata proof
     ) public {
 
         (
@@ -177,6 +200,14 @@ contract CrossChainDAO {
             bytes32[] memory outputScriptHashes
         ) = getTransactionData(transactionData);
 
+        _btcRelay.verifyTX(
+            reversedTxId,
+            proof.blockheight,
+            proof.txPos, 
+            proof.merkleProof, 
+            MIN_CONFIRMATIONS, 
+            proof.committedHeader
+        );
         require(opReturnCommitHash==getStateTransitionCommitHash(outs), "Invalid commit hash in tx");
 
         //Check inputs

@@ -13,8 +13,8 @@ contract GovernorDao {
 
     uint256 public constant MIN_VOTING_PERIOD = 14 days;
     uint256 public constant MAX_VOTING_PERIOD = 30 days;
-    uint256 public constant MIN_QUORUM_PPM = 100000;
-    uint256 public constant MIN_VOTING_POWER_PROPOSAL = 1000;
+    uint256 public constant MIN_QUORUM_PPM = 1000;
+    uint256 public constant MIN_VOTING_POWER_PROPOSAL = 1;
 
     struct ProposalRequest {    
         address target;
@@ -25,6 +25,7 @@ contract GovernorDao {
     }
 
     struct Proposal {
+        uint256 createdAt;
         address target;
         bytes callData;
         bytes name;
@@ -36,13 +37,25 @@ contract GovernorDao {
         mapping(bytes32 => uint256) voters;
     }
 
+    struct ProposalResponse {
+        uint256 createdAt;
+        address target;
+        bytes callData;
+        bytes name;
+        bytes description;
+        uint256 expiry;
+        address author;
+        uint256[2] votes;
+        uint256 state;
+    }
+
     event ProposalCreated(uint256 indexed proposalIndex, address indexed proposer, ProposalRequest proposal);
     event ProposalVote(uint256 indexed proposalIndex, address indexed voter, bytes32 indexed utxoHash, uint8 voteType);
     event ProposalSuccess(uint256 indexed proposalIndex, bytes executionResponse, bool executionSuccess);
     event ProposalFailed(uint256 indexed proposalIndex);
 
-    uint256 _proposalCount;
-    mapping(uint256 => Proposal) _proposals;
+    uint256 public _proposalCount;
+    mapping(uint256 => Proposal) public _proposals;
 
     CrossChainDAO immutable _tokens;
 
@@ -50,6 +63,34 @@ contract GovernorDao {
         _tokens = tokens;
     }
     
+    function getVoteType(bytes32[] calldata utxoHashes, uint256 proposalId) public view returns (uint256) {
+        for(uint256 i=0;i<utxoHashes.length;i++) {
+            if(_proposals[proposalId].voters[utxoHashes[i]]>0) return _proposals[proposalId].voters[utxoHashes[i]];
+        }
+        return 0;
+    }
+
+    function alreadyVoted(bytes32[] calldata utxoHashes, uint256 proposalId) public view returns (bool) {
+        for(uint256 i=0;i<utxoHashes.length;i++) {
+            if(_proposals[proposalId].voters[utxoHashes[i]]>0) return true;
+        }
+        return false;
+    }
+
+    function getProposal(uint256 proposalId) public view returns (ProposalResponse memory) {
+        return ProposalResponse(
+            _proposals[proposalId].createdAt,
+            _proposals[proposalId].target,
+            _proposals[proposalId].callData,
+            _proposals[proposalId].name,
+            _proposals[proposalId].description,
+            _proposals[proposalId].expiry,
+            _proposals[proposalId].author,
+            _proposals[proposalId].votes,
+            _proposals[proposalId].state
+        );
+    }
+
     function getMinVotingPeriod() public view returns (uint256) {
         return MIN_VOTING_PERIOD;
     }
@@ -101,6 +142,7 @@ contract GovernorDao {
         uint256 proposalIndex = _proposalCount;
         _proposalCount++;
 
+        _proposals[proposalIndex].createdAt = block.timestamp;
         _proposals[proposalIndex].target = proposal.target;
         _proposals[proposalIndex].callData = proposal.callData;
         _proposals[proposalIndex].name = proposal.name;
@@ -130,7 +172,7 @@ contract GovernorDao {
 
         for(uint256 i=0;i<utxoHashes.length;i++) {
             bytes32 utxoHash = utxoHashes[i];
-            _proposals[proposalIndex].voters[utxoHash] = voteType;
+            _proposals[proposalIndex].voters[utxoHash] = 1+voteType;
             emit ProposalVote(proposalIndex, msg.sender, utxoHash, voteType);
         }
     }
