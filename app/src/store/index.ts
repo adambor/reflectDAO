@@ -14,25 +14,11 @@ export default createStore({
   },
   getters: {},
   mutations: {
+    setConnected: function (state: any, status) {
+      state.connected = status;
+    },
     connectWallet: async function (state: any) {
-      return new Promise(async (resolve) => {
-        let connection = await EVMWallet.connect(59140);
-        StaticEVMWallet.wallet = connection;
-        
-        StaticEVMWallet.tokenManager = new TokenManager(connection);
-        await StaticEVMWallet.tokenManager.verifyStateTransitions();
-
-        for(let stateTransition of TokenManager.stateTransitions) {
-          console.log(stateTransition);
-          if (stateTransition.state == TokenStateTransitionState.CONFIRMED && stateTransition.smartChainTxs[StaticEVMWallet.wallet.chainId] == null) {
-            await StaticEVMWallet.wallet.proveStateTransition(stateTransition);
-            break;
-          }
-        }
-
-        state.connected = true;
-        resolve(connection);
-      });
+      
     },
     getProposals: async function (state: any) {
       let proposals = await StaticEVMWallet.wallet.getProposals();
@@ -66,7 +52,24 @@ export default createStore({
   },
   actions: {
     connectWallet: function (context) {
-      context.commit('connectWallet');
+      return new Promise(async (resolve) => {
+        let connection = await EVMWallet.connect(59140);
+        StaticEVMWallet.wallet = connection;
+        
+        StaticEVMWallet.tokenManager = new TokenManager(connection);
+        await StaticEVMWallet.tokenManager.verifyStateTransitions();
+
+        for(let stateTransition of TokenManager.stateTransitions) {
+          console.log(stateTransition);
+          if (stateTransition.state == TokenStateTransitionState.CONFIRMED && stateTransition.smartChainTxs[StaticEVMWallet.wallet.chainId] == null) {
+            await StaticEVMWallet.wallet.proveStateTransition(stateTransition);
+            break;
+          }
+        }
+
+        context.commit("setConnected", true);
+        resolve(connection);
+      });
     },
     getProposals: function (context) {
       context.commit('getProposals');

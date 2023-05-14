@@ -19,11 +19,10 @@ import { Options, Vue } from "vue-class-component";
   },
   methods: {
     connectWallet: async function () {
-      this.$store.dispatch("connectWallet");
-      setTimeout( () => {
+      this.$store.dispatch("connectWallet").then(() => {
         this.$store.dispatch("getProposals");
         this.$store.dispatch("getTokenBalance");
-      }, 1000)
+      });
     }
   }
 })
