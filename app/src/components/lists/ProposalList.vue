@@ -3,7 +3,9 @@
     
     <template v-if="this.$store.state.proposals">
       <div v-for="proposal in this.$store.state.proposals" v-bind:key="proposal.id">
-        <ProposalCard :proposal="proposal" />
+        <router-link :to="getURL(proposal.id)">
+          <ProposalCard :proposal="proposal" />
+        </router-link>
       </div>
     </template>
 
@@ -26,8 +28,11 @@ import ProposalCard from "@/components/ProposalCard.vue";
     return {
     }
   },
-  props: {
-  },
+  methods: {
+    getURL: function (id: number) {
+      return "proposal/" + id;
+    } 
+  }
 })
 export default class ProposalList extends Vue {
 
@@ -44,6 +49,10 @@ export default class ProposalList extends Vue {
       color:rgba(255,255,255,.4);
       text-align:left;
       font-size:3rem;
+    }
+
+    a {
+      text-decoration: none;
     }
 
   }

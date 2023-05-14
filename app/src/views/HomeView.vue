@@ -5,9 +5,14 @@
       <div class="main-title">
         <h1>Proposals</h1>
         <template v-if="this.$store.state.connected && this.$store.state.balance.totalTokens != this.$store.state.balance.lockedTokens">
-          <router-link to="/lock">
-            <button>Lock your tokens</button>
-          </router-link>
+          <div class="actions-wrapper">
+            <router-link to="/send">
+              <button>Send your tokens</button>
+            </router-link>
+            <router-link to="/lock">
+              <button>Lock your tokens</button>
+            </router-link>
+          </div>
         </template>
       </div>
       <ProposalList />
@@ -45,19 +50,27 @@ export default class HomeView extends Vue {}
         margin-bottom:1rem;
         color:#fff;
 
-        button {
-          padding: .5rem 1rem;
-          background-color:transparent;
-          border:0;
-          border:2px solid rgba(255,255,255,.1);
-          border-radius:10px;
-          box-sizing: border-box;
-          color:rgba(255,255,255,.8);
-          cursor:pointer;
-          
-          &:hover {
-            background-color:rgba(255,255,255,.02);
+        a {
+
+          &:not(:last-of-type) {
+            margin-right:.7rem;
           }
+
+          button {
+            padding: .5rem 1rem;
+            background-color:transparent;
+            border:0;
+            border:2px solid rgba(255,255,255,.1);
+            border-radius:10px;
+            box-sizing: border-box;
+            color:rgba(255,255,255,.8);
+            cursor:pointer;
+            
+            &:hover {
+              background-color:rgba(255,255,255,.02);
+            }
+          }
+
         }
 
       }

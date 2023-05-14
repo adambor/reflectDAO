@@ -1,8 +1,8 @@
 <template>
     <Header />
-    <div class="lock-section">
+    <div class="send-section">
        <div class="main-title">
-         <h1>Lock your tokens</h1>
+         <h1>Send your tokens</h1>
        </div>
        <div class="body-content">
          <div class="input">
@@ -10,10 +10,10 @@
             <input v-model="tokenAmount" type="number">
          </div>
          <div class="input">
-            <p>Lock time</p>
-            <input v-model="lockTime" type="date">
+            <p>UTXO Hash</p>
+            <input v-model="hash" type="text">
          </div>
-         <button @click="lockTokens()">Lock tokens</button>
+         <button @click="send()">Send</button>
        </div>
     </div>
 </template>
@@ -22,36 +22,30 @@
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
 import Header from "@/components/Header.vue";
+import { StaticEVMWallet } from "@/StaticEVMWallet";
 
 @Options({
   data: function () {
     return {
       tokenAmount: 0,
-      lockTime: 0
+      hash: null
     };
   },
   components: {
     Header
   },
   methods: {
-      lockTokens: async function () {
-        var date1 = new Date(this.lockTime); 
-        var date2 = new Date();
-
-        var difference = date1. getTime() - date2. getTime();
-        var days = Math.ceil(difference / (1000 * 3600 * 24));
-
-        let stateTransition = await this.$store.state.tokenManager.createLockStateTransition(days, this.tokenAmount);
-        console.log( await this.$store.state.wallet.btcWallet.commitStateTransition(stateTransition) );
-
-      }
+    send: async function () {
+      let stateTransition = await StaticEVMWallet.tokenManager.createSendStateTransition(this.hash, this.tokenAmount);
+      console.log( await StaticEVMWallet.wallet.btcWallet.commitStateTransition(stateTransition) );
+    }
   }
 })
-export default class LockView extends Vue {}
+export default class SendView extends Vue {}
 </script>
 
 <style lang="scss" scoped>
-  .lock-section {
+  .send-section {
       max-width:1000px;
       margin:0 auto;
       overflow:auto;
